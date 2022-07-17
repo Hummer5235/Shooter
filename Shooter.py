@@ -8,25 +8,79 @@ SCREEN_HEIGHT = (SCREEN_WIDTH*0.8)
 screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT))
 pygame.display.set_caption("Shooter")
 
+#Установить частоту кадров
+clock = pygame.time.Clock()
+FPS = 60
+
+#Переменные действия игрока
+moving_left = False
+moving_right = False
+
+BG = (144,201,120)
+
+def draw_bg():
+    screen.fill(BG)
+
 class Soldier(pygame.sprite.Sprite):
-    def __init__(self,x,y,scale):
+    def __init__(self,char_type,x,y,scale,speed):
         pygame.sprite.Sprite.__init__(self)
-        img = pygame.image.load("img/player/Idle/0.png").convert_alpha()
-        self.image = pygame.transform.scale(img,(img.get_width() * scale,img.get_height()*scale  ))
+        self.char_type = char_type
+        self.speed = speed
+        self.direction = 1
+        self.flip = False
+        self.animation_list = []
+        self.frame_index = 0
+        self.update_time = pygame.time.get_ticks()
+        for i in range(5):
+            img = pygame.image.load(f"img/{self.char_type}/Idle/{i}.png").convert_alpha()
+            img = pygame.transform.scale(img,(img.get_width() * scale,img.get_height()*scale  ))
+            self.animation_list.append(img)
+        self.image = self.animation_list[self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center  = (x,y)
 
+    def update_animation(self):
+        #Обновление анимации
+        ANIMATION_COOLDOWN = 100
+
+
+
     def draw(self):
-        screen.blit(self.image,self.rect)
+        screen.blit(pygame.transform.flip(self.image,self.flip,False),self.rect)
+
+    def move(self,moving_left,moving_right):
+        #Обнулить переменные перемещения
+        dx = 0
+        dy = 0
+
+        if moving_left:
+            dx = -self.speed
+            self.direction = -1
+            self.flip = True
+        if moving_right:
+            dx = self.speed
+            self.direction = 1
+            self.flip = False
+
+        #обновление позиции игрока
+        self.rect.x += dx
+        self.rect.y += dy
 
 
-player = Soldier(200,300,2)
-player2 = Soldier(300,300,2)
+
+
+player = Soldier("player",200,300,2,5)
+enemy = Soldier("enemy",300,300,2,5)
 
 run = True
 while run:
+    draw_bg()
     player.draw()
-    player2.draw()
+
+    enemy.draw()
+
+    player.move(moving_left,moving_right)
+
 
     for event in pygame.event.get():
         # quit game
@@ -52,6 +106,7 @@ while run:
 
 
     pygame.display.update()
+    clock.tick(FPS)
 
 
 
