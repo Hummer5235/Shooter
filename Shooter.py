@@ -29,9 +29,26 @@ while run:
     player2.draw()
 
     for event in pygame.event.get():
+        # quit game
         if event.type == pygame.QUIT:
             pygame.quit()
             quit()
+        # keyboard presses
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a:
+                moving_left = True
+            if event.key == pygame.K_d:
+                moving_right = True
+            if event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                quit()
+
+        # keyboard button released
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_a:
+                moving_left = False
+            if event.key == pygame.K_d:
+                moving_right = False
 
 
     pygame.display.update()
