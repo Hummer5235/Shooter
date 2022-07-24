@@ -30,19 +30,41 @@ class Soldier(pygame.sprite.Sprite):
         self.flip = False
         self.animation_list = []
         self.frame_index = 0
+        self.action = 0
         self.update_time = pygame.time.get_ticks()
+        temp_list = []
         for i in range(5):
             img = pygame.image.load(f"img/{self.char_type}/Idle/{i}.png").convert_alpha()
             img = pygame.transform.scale(img,(img.get_width() * scale,img.get_height()*scale  ))
-            self.animation_list.append(img)
-        self.image = self.animation_list[self.frame_index]
+            temp_list.append(img)
+        self.animation_list.append(temp_list)
+        temp_list = []
+        for i in range(6):
+            img = pygame.image.load(f"img/{self.char_type}/Run/{i}.png").convert_alpha()
+            img = pygame.transform.scale(img,(img.get_width() * scale,img.get_height()*scale  ))
+            temp_list.append(img)
+        self.animation_list.append(temp_list)
+        self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center  = (x,y)
 
     def update_animation(self):
         #Обновление анимации
         ANIMATION_COOLDOWN = 100
+        self.image = self.animation_list[self.action][self.frame_index]
+        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
+            self.frame_index += 1
+            self.update_time = pygame.time.get_ticks()
 
+            if self.frame_index >= len(self.animation_list[self.action]):
+                self.frame_index = 0
+
+    def update_action(self,new_action):
+        # Если новое действие не равно старому, тогда поменять
+        if new_action != self.action:
+            self.action = new_action
+            self.frame_index = 0
+            self.update_time = pygame.time.get_ticks()
 
 
     def draw(self):
@@ -76,10 +98,16 @@ run = True
 while run:
     draw_bg()
     player.draw()
-
     enemy.draw()
 
+    # Обновление действий игрока
+    if moving_left or moving_right:
+        player.update_action(1)
+    else:
+        player.update_action(0)
+
     player.move(moving_left,moving_right)
+    player.update_animation()
 
 
     for event in pygame.event.get():
