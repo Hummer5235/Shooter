@@ -18,9 +18,17 @@ GRAVITY = 0.75
 #Переменные действия игрока
 moving_left = False
 moving_right = False
+shoot = False
+
+
+#load images
+#bullet
+bullet_img = pygame.image.load("img/icons/bullet.png").convert_alpha()
 
 BG = (144,201,120)
 RED = (255,0,0)
+
+
 
 def draw_bg():
     screen.fill(BG)
@@ -78,6 +86,10 @@ class Soldier(pygame.sprite.Sprite):
         screen.blit(pygame.transform.flip(self.image,self.flip,False),self.rect)
         # pygame.draw.rect(screen,RED,(self.rect.x,self.rect.y,self.rect.width,self.rect.height),3)
 
+    def shoot(self):
+        bullet = Bullet(self.rect.centerx + (self.rect.width * 0.6 * self.direction), self.rect.centery, self.direction)
+        bullet_group.add(bullet)
+
     def move(self,moving_left,moving_right):
         #Обнулить переменные перемещения
         dx = 0
@@ -87,6 +99,7 @@ class Soldier(pygame.sprite.Sprite):
             dx = -self.speed
             self.direction = -1
             self.flip = True
+
         if moving_right:
             dx = self.speed
             self.direction = 1
@@ -109,6 +122,27 @@ class Soldier(pygame.sprite.Sprite):
         self.rect.x += dx
         self.rect.y += dy
 
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, x, y, direction):
+        pygame.sprite.Sprite.__init__(self)
+        self.speed = 1
+        self.image = bullet_img
+        self.rect = self.image.get_rect()
+        self.rect.center = (x,y)
+        self.direction = direction
+
+    def update(self):
+        #Движение пуль
+        self.rect.x += self.speed * self.direction
+        # Проверить зашла ли пуля за экран
+        if self.rect.x < 0 or self.rect.x > 800:
+            self.kill()
+
+
+
+
+#Создание групп спрайтов
+bullet_group = pygame.sprite.Group()
 
 
 
@@ -121,8 +155,16 @@ while run:
     player.draw()
     enemy.draw()
 
+    #Обновление и отрисовка групп
+    bullet_group.update()
+    bullet_group.draw(screen)
+
     # Обновление действий игрока
     if player.alive:
+        #Выстрелы пуль
+        if shoot:
+            player.shoot()
+
         if player.in_air:
             player.update_action(2)
         elif moving_left or moving_right:
@@ -145,6 +187,8 @@ while run:
                 moving_left = True
             if event.key == pygame.K_d:
                 moving_right = True
+            if event.key == pygame.K_SPACE:
+                shoot = True
             if event.key == pygame.K_w and player.alive :
                 player.jump = True
             if event.key == pygame.K_ESCAPE:
@@ -158,6 +202,8 @@ while run:
                 moving_left = False
             if event.key == pygame.K_d:
                 moving_right = False
+            if event.key == pygame.K_SPACE:
+                shoot = False
 
 
     pygame.display.update()
