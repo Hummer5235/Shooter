@@ -19,11 +19,15 @@ GRAVITY = 0.75
 moving_left = False
 moving_right = False
 shoot = False
+grenade = False
+grenade_thrown = False
 
 
 #load images
 #bullet
 bullet_img = pygame.image.load("img/icons/bullet.png").convert_alpha()
+#grenade
+grenade_img = pygame.image.load("img/icons/grenade.png").convert_alpha()
 
 BG = (144,201,120)
 RED = (255,0,0)
@@ -35,13 +39,14 @@ def draw_bg():
     pygame.draw.line(screen,RED,(0,400),(SCREEN_WIDTH,400),3)
 
 class Soldier(pygame.sprite.Sprite):
-    def __init__(self,char_type,x,y,scale,speed, ammo):
+    def __init__(self,char_type,x,y,scale,speed, ammo , grenades):
         pygame.sprite.Sprite.__init__(self)
         self.alive = True
         self.char_type = char_type
         self.speed = speed
         self.ammo = ammo
         self.star_ammo = ammo
+        self.grenades = grenades
         self.shoot_cooldown = 0
         self.health = 100
         self.max_health = self.health
@@ -136,7 +141,7 @@ class Soldier(pygame.sprite.Sprite):
         self.vel_y += GRAVITY
         dy += self.vel_y
 
-
+        # Проверка столкновения с полом
         if self.rect.bottom + dy > 400:
             dy = 400 - self.rect.bottom
             self.in_air = False
@@ -191,13 +196,51 @@ class Bullet(pygame.sprite.Sprite):
                 self.kill()
 
 
+
+class Grenade(pygame.sprite.Sprite):
+    def __init__(self, x, y, direction):
+        pygame.sprite.Sprite.__init__(self)
+        self.timer = 100
+        self.vel_y = -13
+        self.speed = 8
+        self.image = grenade_img
+        self.rect = self.image.get_rect()
+        self.rect.center = (x,y)
+        self.direction = direction
+    
+    def update(self):
+        self.vel_y += GRAVITY
+        
+        dx = self.speed * self.direction
+        dy = self.vel_y
+
+        # Проверка столкновения с полом
+        if self.rect.bottom + dy > 400:
+            dy = 400 - self.rect.bottom
+            self.speed = 0
+            
+            
+        # Проверка столкновения со стенами
+        if self.rect.x + dx <= 0 or self.rect.x + dx >= 700:
+            self.direction *= -1
+            
+        
+        # Применить смещение
+        self.rect.x += dx
+        self.rect.y += dy
+        
+        
+        
+        
+
 #Создание групп спрайтов
 bullet_group = pygame.sprite.Group()
+grenade_group = pygame.sprite.Group()
 
 
 
-player = Soldier("player", 200, 300, 2, 5, 20)
-enemy = Soldier("enemy", 300, 300, 2, 5, 20)
+player = Soldier("player", 200, 300, 2, 5, 20, 5000)
+enemy = Soldier("enemy", 300, 300, 2, 5, 40, 0)
 
 run = True
 while run:
@@ -209,13 +252,24 @@ while run:
 
     #Обновление и отрисовка групп
     bullet_group.update()
+    grenade_group.update()
     bullet_group.draw(screen)
+    grenade_group.draw(screen)
 
     # Обновление действий игрока
     if player.alive:
         #Выстрелы пуль
         if shoot:
             player.shoot()
+        elif grenade and grenade_thrown == False and player.grenades > 0 :
+            # Создать гранату
+            grenade = Grenade(player.rect.centerx + (0.5 * player.rect.size[0]* player.direction),\
+                                player.rect.top, player.direction)
+            grenade_group.add(grenade)
+        
+            player.grenades -= 1 # Уменьшить количество гранат
+            grenade_thrown = True
+            
 
         if player.in_air:
             player.update_action(2)
@@ -241,6 +295,8 @@ while run:
                 moving_right = True
             if event.key == pygame.K_SPACE:
                 shoot = True
+            if event.key == pygame.K_q:
+                grenade = True
             if event.key == pygame.K_w and player.alive :
                 player.jump = True
             if event.key == pygame.K_ESCAPE:
@@ -248,7 +304,7 @@ while run:
                 quit()
 
 
-        # keyboard button released
+        # Отпустили нажатые клавиши
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_a:
                 moving_left = False
@@ -256,7 +312,12 @@ while run:
                 moving_right = False
             if event.key == pygame.K_SPACE:
                 shoot = False
-
+            if event.key == pygame.K_q:
+                grenade= False
+                grenade_thrown = False
+                
+        
+        print(grenade)
 
     pygame.display.update()
     clock.tick(FPS)
