@@ -14,6 +14,7 @@ clock = pygame.time.Clock()
 FPS = 60
 
 GRAVITY = 0.75
+TILE_SIZE = 40
 
 #Переменные действия игрока
 moving_left = False
@@ -103,7 +104,7 @@ class Soldier(pygame.sprite.Sprite):
     def shoot(self):
         if self.shoot_cooldown == 0 and self.ammo > 0:
             self.shoot_cooldown = 20
-            bullet = Bullet(self.rect.centerx + (self.rect.width * 0.3 * self.direction), self.rect.centery, self.direction)
+            bullet = Bullet(self.rect.centerx + (self.rect.width * 0.6 * self.direction), self.rect.centery, self.direction)
             bullet_group.add(bullet)
             #вычитание патронов
             self.ammo -= 1
@@ -182,18 +183,20 @@ class Bullet(pygame.sprite.Sprite):
         if self.rect.x < 0 or self.rect.x > 800:
             self.kill()
             
-        #Проверить столкновение с персонажами
+        #Проверить столкновение с гланым игроком
         if pygame.sprite.spritecollide(player, bullet_group, False):
             if player.alive:
                 player.health -= 25
                 self.kill()
                 print(player.health)
                 
-        if pygame.sprite.spritecollide(enemy, bullet_group, False):
-            if enemy.alive:
-                enemy.health -= 25
-                print(enemy.health)
-                self.kill()
+        #Проверить столкновение с врагами
+        for enemy in enemy_group:
+            if pygame.sprite.spritecollide(enemy, bullet_group, False):
+                if enemy.alive:
+                    enemy.health -= 25
+                    print(enemy.health)
+                    self.kill()
 
 
 
@@ -221,7 +224,7 @@ class Grenade(pygame.sprite.Sprite):
             
             
         # Проверка столкновения со стенами
-        if self.rect.x + dx <= 0 or self.rect.x + dx >= 700:
+        if self.rect.x + dx <= 0 or self.rect.x + dx >= 800:
             self.direction *= -1
             
         
@@ -229,32 +232,98 @@ class Grenade(pygame.sprite.Sprite):
         self.rect.x += dx
         self.rect.y += dy
         
+        #Уменьшение таймера
+        self.timer -= 1
+        
+        #Время кончилась, граната взрывается
+        if self.timer <= 0 :
+            self.kill()
+            explosion = Explosion(self.rect.x, self.rect.y, 2)
+            explosion_group.add(explosion)
+            print(enemy_group)
+            #Нанести урон , если кто-либо в области поражения
+            if abs(self.rect.centerx - player.rect.centerx) < TILE_SIZE*2 and \
+            abs(self.rect.centery - player.rect.centery) < TILE_SIZE*2 :
+                #Отнять здоровье игрока
+                player.health -= 50
+                
+            for enemy in enemy_group:
+                if abs(self.rect.centerx - enemy.rect.centerx) < TILE_SIZE * 2 and \
+                abs(self.rect.centery - enemy.rect.centery) < TILE_SIZE * 2:
+                    # Отнять здоровье врага
+                    enemy.health -= 50
+                    
+                    
+            
+        
+    
+
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, x, y, scale):
+        pygame.sprite.Sprite.__init__(self)
+        self.images = []
+        for num in range(1,6):
+            img = pygame.image.load(f'img/explosion/exp{num}.png').convert_alpha()
+            img = pygame.transform.scale(img,(img.get_width()*scale, img.get_height()*scale))
+            self.images.append(img)
+        self.frame_index = 0
+        self.image = self.images[self.frame_index]
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.counter = 0
+        
+    def update(self):
+        EXPLOSION_SPEED = 5
+        
+        self.counter += 1
+        if self.counter >= EXPLOSION_SPEED:
+            self.counter = 0
+            self.frame_index += 1
+            
+        if self.frame_index >= len(self.images):
+            self.kill()
+        else:
+            self.image = self.images[self.frame_index]
+        
+            
         
         
         
 
-#Создание групп спрайтов
+#Создание групп спрайтов\
+enemy_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
 grenade_group = pygame.sprite.Group()
+explosion_group = pygame.sprite.Group()
+
 
 
 
 player = Soldier("player", 200, 300, 2, 5, 20, 5000)
 enemy = Soldier("enemy", 300, 300, 2, 5, 40, 0)
+enemy_group.add(enemy)
+enemy = Soldier("enemy", 600, 300, 2, 5, 40, 0)
+enemy_group.add(enemy)
+
+
 
 run = True
 while run:
     draw_bg()
     player.draw()
-    enemy.draw()
     player.update()
-    enemy.update()
+    for enemy in enemy_group:
+        enemy.update()
+        enemy.draw()
+    
 
     #Обновление и отрисовка групп
     bullet_group.update()
     grenade_group.update()
+    explosion_group.update()
     bullet_group.draw(screen)
     grenade_group.draw(screen)
+    explosion_group.draw(screen)
 
     # Обновление действий игрока
     if player.alive:
@@ -317,11 +386,11 @@ while run:
                 grenade_thrown = False
                 
         
-        print(grenade)
+        
+        
 
     pygame.display.update()
     clock.tick(FPS)
-
 
 
 
