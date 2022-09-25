@@ -29,6 +29,16 @@ grenade_thrown = False
 bullet_img = pygame.image.load("img/icons/bullet.png").convert_alpha()
 #grenade
 grenade_img = pygame.image.load("img/icons/grenade.png").convert_alpha()
+#pick up boxes
+health_box_img = pygame.image.load("img/icons/health_box.png").convert_alpha()
+ammo_box_img = pygame.image.load('img/icons/ammo_box.png').convert_alpha()
+grenade_box_img = pygame.image.load('img/icons/grenade_box.png').convert_alpha()
+item_boxes = {
+    'Health': health_box_img,
+    'Ammo': ammo_box_img,
+    'Grenade' :grenade_box_img
+}
+
 
 BG = (144,201,120)
 RED = (255,0,0)
@@ -160,11 +170,33 @@ class Soldier(pygame.sprite.Sprite):
             self.direction = 1
             self.update_action(3)
             
+
             
-            
         
-        
-        
+class ItemBox(pygame.sprite.Sprite):
+    def __init__(self, item_type , x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.item_type = item_type
+        self.image = item_boxes[ self.item_type ]
+        self.rect = self.image.get_rect()
+        self.rect.midtop = (x + TILE_SIZE // 2 , y + (TILE_SIZE - self.image.get_height()) )
+
+
+    def update(self):
+        #Проверить столкновение героя с боксами
+        if pygame.sprite.collide_rect(self, player):
+            if self.item_type == 'Health':
+                print(player.health)
+                player.health += 25
+                if player.health >= player.max_health:
+                    player.health = player.max_health
+
+                print(player.health)
+            elif self.item_type == 'Ammo':
+                player.ammo += 15
+            elif self.item_type == 'Grenade':
+                player.grenades += 3
+            self.kill()
         
 
 class Bullet(pygame.sprite.Sprite):
@@ -183,7 +215,7 @@ class Bullet(pygame.sprite.Sprite):
         if self.rect.x < 0 or self.rect.x > 800:
             self.kill()
             
-        #Проверить столкновение с гланым игроком
+        #Проверить столкновение с главным игроком
         if pygame.sprite.spritecollide(player, bullet_group, False):
             if player.alive:
                 player.health -= 25
@@ -240,7 +272,7 @@ class Grenade(pygame.sprite.Sprite):
             self.kill()
             explosion = Explosion(self.rect.x, self.rect.y, 2)
             explosion_group.add(explosion)
-            print(enemy_group)
+
             #Нанести урон , если кто-либо в области поражения
             if abs(self.rect.centerx - player.rect.centerx) < TILE_SIZE*2 and \
             abs(self.rect.centery - player.rect.centery) < TILE_SIZE*2 :
@@ -290,16 +322,24 @@ class Explosion(pygame.sprite.Sprite):
         
         
 
-#Создание групп спрайтов\
+#Создание групп спрайтов
 enemy_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
 grenade_group = pygame.sprite.Group()
 explosion_group = pygame.sprite.Group()
+item_box_group = pygame.sprite.Group()
+
+
+item_box = ItemBox('Health' , 100, 360)
+item_box_group.add(item_box)
+item_box = ItemBox('Ammo' , 300, 360)
+item_box_group.add(item_box)
+item_box = ItemBox('Grenade' , 500, 360)
+item_box_group.add(item_box)
 
 
 
-
-player = Soldier("player", 200, 300, 2, 5, 20, 5000)
+player = Soldier("player", 200, 300, 2, 5, 20,3)
 enemy = Soldier("enemy", 300, 300, 2, 5, 40, 0)
 enemy_group.add(enemy)
 enemy = Soldier("enemy", 600, 300, 2, 5, 40, 0)
@@ -309,9 +349,12 @@ enemy_group.add(enemy)
 
 run = True
 while run:
+
     draw_bg()
     player.draw()
     player.update()
+
+
     for enemy in enemy_group:
         enemy.update()
         enemy.draw()
@@ -321,9 +364,11 @@ while run:
     bullet_group.update()
     grenade_group.update()
     explosion_group.update()
+    item_box_group.update()
     bullet_group.draw(screen)
     grenade_group.draw(screen)
     explosion_group.draw(screen)
+    item_box_group.draw(screen)
 
     # Обновление действий игрока
     if player.alive:
@@ -335,7 +380,7 @@ while run:
             grenade = Grenade(player.rect.centerx + (0.5 * player.rect.size[0]* player.direction),\
                                 player.rect.top, player.direction)
             grenade_group.add(grenade)
-        
+
             player.grenades -= 1 # Уменьшить количество гранат
             grenade_thrown = True
             
