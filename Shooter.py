@@ -42,10 +42,6 @@ item_boxes = {
 BG = (144,201,120)
 RED = (255,0,0)
 
-#Шрифт
-font = pygame.font.Font('fonts/ChareInk/ChareInk-Bold.ttf', 30)
-
-
 
 
 def draw_bg():
@@ -189,12 +185,12 @@ class ItemBox(pygame.sprite.Sprite):
         #Проверить столкновение героя с боксами
         if pygame.sprite.collide_rect(self, player):
             if self.item_type == 'Health':
-
+                print(player.health)
                 player.health += 25
                 if player.health >= player.max_health:
                     player.health = player.max_health
 
-
+                print(player.health)
             elif self.item_type == 'Ammo':
                 player.ammo += 15
             elif self.item_type == 'Grenade':
