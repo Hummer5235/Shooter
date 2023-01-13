@@ -2,5 +2,9 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/GitHub/Django/django-sites/djsite" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/GitHub/Django/django-sites/mysite" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/GitHub/LevelEditor" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/GitHub/Shooter" vcs="Git" />
   </component>
 </project>
